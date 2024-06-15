@@ -116,6 +116,10 @@ const studentSchema = new Schema<TStudent, StudentModel>({
     default: "active",
     required: [true, "Status is required"],
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // PRE-HOOK FOR ENCRYPTING/HASHING PASSWORD
@@ -130,6 +134,22 @@ studentSchema.pre("save", async function (next) {
 // POST HOOK FOR SENDING EMPTY PASSWORD
 studentSchema.post("save", function (doc, next) {
   doc.password = "";
+  next();
+});
+
+// REMOVE isDeleted = true data from results
+studentSchema.pre("find", function (next) {
+  this.find({ isDeleted: { $eq: false } });
+  next();
+});
+
+studentSchema.pre("findOne", function (next) {
+  this.find({ isDeleted: { $eq: false } });
+  next();
+});
+
+studentSchema.pre("aggregate", function (next) {
+  this.pipeline().unshift({ $match: { isDeleted: { $eq: false } } });
   next();
 });
 
