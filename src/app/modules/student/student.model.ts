@@ -6,6 +6,8 @@ import {
   TStudent,
   TUserName,
 } from "./student.interface";
+import config from "../../config";
+import bcrypt from "bcrypt";
 
 const userNameSchema = new Schema<TUserName>({
   firstName: { type: String, required: [true, "First name is required"] },
@@ -55,6 +57,11 @@ const studentSchema = new Schema<TStudent, StudentModel>({
     type: String,
     required: [true, "Student ID is required"],
     unique: true,
+  },
+  password: {
+    type: String,
+    required: [true, "Password is required"],
+    minlength: [8, "Password must be at least 8 characters"],
   },
   name: { type: userNameSchema, required: [true, "Name is required"] },
   gender: {
@@ -111,14 +118,24 @@ const studentSchema = new Schema<TStudent, StudentModel>({
   },
 });
 
+// PRE-HOOK FOR ENCRYPTING/HASHING PASSWORD
+studentSchema.pre("save", async function (next) {
+  this.password = await bcrypt.hash(
+    this.password,
+    Number(config.bcrypt_salt_rounds)
+  );
+  next();
+});
+
+// POST HOOK FOR SENDING EMPTY PASSWORD
+studentSchema.post("save", function (doc, next) {
+  doc.password = "";
+  next();
+});
+
 studentSchema.statics.isUserExists = async function (id: string) {
   const existingUser = await Student.findOne({ id });
   return existingUser;
 };
-
-// studentSchema.methods.isUserExists = async function (id: string) {
-//   const existingUser = await Student.findOne({ id });
-//   return existingUser;
-// };
 
 export const Student = model<TStudent, StudentModel>("Student", studentSchema);

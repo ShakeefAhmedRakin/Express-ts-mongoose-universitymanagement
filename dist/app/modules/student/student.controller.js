@@ -8,16 +8,58 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StudentControllers = void 0;
 const student_service_1 = require("./student.service");
+const student_validation_1 = __importDefault(require("./student.validation"));
 const createStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const student = req.body.student;
+        // VALIDATION
+        const { error } = student_validation_1.default.validate(student);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message || "Something went wrong!",
+            });
+        }
         const result = yield student_service_1.StudentServices.createStudentIntoDB(student);
         res.status(200).json({
             success: true,
             message: "Student is created successfully",
+            data: result,
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            success: false,
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Something went wrong!",
+        });
+    }
+});
+const getAllStudents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield student_service_1.StudentServices.getAllStudentsFromDB();
+        res.status(200).json({
+            success: true,
+            message: "Student is retrieved successfully",
+            data: result,
+        });
+    }
+    catch (err) {
+        console.log(err);
+    }
+});
+const getStudentById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = req.params.id;
+        const result = yield student_service_1.StudentServices.getStudentByIdFromDB(id);
+        res.status(200).json({
+            success: true,
+            message: `Student with id ${id} is retrieved successfully`,
             data: result,
         });
     }
@@ -27,4 +69,6 @@ const createStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 exports.StudentControllers = {
     createStudent,
+    getAllStudents,
+    getStudentById,
 };
