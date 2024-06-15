@@ -6,8 +6,8 @@ import {
   TStudent,
   TUserName,
 } from "./student.interface";
-import config from "../../config";
-import bcrypt from "bcrypt";
+
+import { User } from "../user/user.model";
 
 const userNameSchema = new Schema<TUserName>({
   firstName: { type: String, required: [true, "First name is required"] },
@@ -58,10 +58,11 @@ const studentSchema = new Schema<TStudent, StudentModel>({
     required: [true, "Student ID is required"],
     unique: true,
   },
-  password: {
-    type: String,
-    required: [true, "Password is required"],
-    minlength: [8, "Password must be at least 8 characters"],
+  user: {
+    type: Schema.Types.ObjectId,
+    required: [true, "User ID is required"],
+    unique: true,
+    ref: User,
   },
   name: { type: userNameSchema, required: [true, "Name is required"] },
   gender: {
@@ -107,34 +108,10 @@ const studentSchema = new Schema<TStudent, StudentModel>({
     required: [true, "Local guardian information is required"],
   },
   profileImg: { type: String },
-  isActive: {
-    type: String,
-    enum: {
-      values: ["active", "blocked"],
-      message: "Status must be either active or blocked",
-    },
-    default: "active",
-    required: [true, "Status is required"],
-  },
   isDeleted: {
     type: Boolean,
     default: false,
   },
-});
-
-// PRE-HOOK FOR ENCRYPTING/HASHING PASSWORD
-studentSchema.pre("save", async function (next) {
-  this.password = await bcrypt.hash(
-    this.password,
-    Number(config.bcrypt_salt_rounds)
-  );
-  next();
-});
-
-// POST HOOK FOR SENDING EMPTY PASSWORD
-studentSchema.post("save", function (doc, next) {
-  doc.password = "";
-  next();
 });
 
 // REMOVE isDeleted = true data from results
